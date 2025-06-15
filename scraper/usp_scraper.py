@@ -8,7 +8,8 @@ from models.curso import Curso
 import time
 
 class USPScraper:
-    def __init__(self, limite_unidades):
+    def __init__(self, limite_unidades, tempo=0.1):
+        self.tempo = tempo
         self.limite_unidades = limite_unidades
         self.unidades = []
 
@@ -24,7 +25,7 @@ class USPScraper:
         select_element = self.driver.find_element(By.ID, "comboUnidade")
         select = Select(select_element)
 
-        time.sleep(0.5)
+        time.sleep(self.tempo)
 
         # Coleta todas as opções (ignorando a primeira: "Selecione")
         opcoes_unidades = select.options[1:]  # Ignora a primeira opção
@@ -41,7 +42,7 @@ class USPScraper:
 
             # Seleciona a unidade no menu
             select.select_by_index(i + 1)
-            time.sleep(0.5)  # Tempo para o site carregar os cursos (ajuste conforme necessário)
+            time.sleep(self.tempo)  # Tempo para o site carregar os cursos (ajuste conforme necessário)
 
             unidade = Unidade(nome)
             self.unidades.append(unidade)
@@ -64,12 +65,12 @@ class USPScraper:
                 check_input = self.driver.find_element(By.ID, "enviar")
                 check_input.click()
 
-                time.sleep(1)
+                time.sleep(self.tempo * 2)
 
                 tab_grade = self.driver.find_element(By.ID, "step4-tab")
                 tab_grade.click()
 
-                time.sleep(3)
+                time.sleep(self.tempo * 5)
 
                 curso = Curso.from_html(self.driver.page_source, unidade)
                 unidade.adicionar_curso(curso)
@@ -77,9 +78,27 @@ class USPScraper:
                 tab_busca = self.driver.find_element(By.ID, "step1-tab")
                 tab_busca.click()
 
-                time.sleep(1)
+                time.sleep(self.tempo * 2)
 
         print("\nFim da coleta de unidades.")
+
+    def get_unidades(self):
+        return self.unidades
+
+    def get_cursos(self):
+        cursos = []
+        for unidade in self.unidades:
+            cursos.extend(unidade.cursos)
+        return cursos
+
+    def get_disciplinas(self):
+        disciplinas = []
+        for unidade in self.unidades:
+            for curso in unidade.cursos:
+                disciplinas.extend(curso.disciplinas_obrigatorias)
+                disciplinas.extend(curso.disciplinas_optativas_livres)
+                disciplinas.extend(curso.disciplinas_optativas_eletivas)
+        return disciplinas
 
     def finalizar(self):
         self.driver.quit()

@@ -41,9 +41,21 @@ class Curso:
                 if disciplina:
                     curso.adicionar_disciplina(disciplina, tipo)
 
-        print("Curso: ", nome, unidade.nome, ideal, minima, maxima)
-
         return curso
+
+    def print(self):
+        print("="*50)
+        print(f"Curso: {self.nome} - Unidade: {self.unidade}")
+        print(f"  Duração Ideal: {self.duracao_ideal}, Mínima: {self.duracao_min}, Máxima: {self.duracao_max}\n")
+        # print("  Disciplinas Obrigatórias:")
+        # for d in self.disciplinas_obrigatorias:
+        #     d.print()
+        # print("  Disciplinas Optativas Livres:")
+        # for d in self.disciplinas_optativas_livres:
+        #     d.print()
+        # print("  Disciplinas Optativas Eletivas:")
+        # for d in self.disciplinas_optativas_eletivas:
+        #     d.print()
 
     def adicionar_disciplina(self, disciplina, tipo):
         if tipo == "obrigatoria":

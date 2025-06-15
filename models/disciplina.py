@@ -38,13 +38,14 @@ class Disciplina:
             carga_pcc = parse_int(td[6].text) if len(td) > 6 else 0
             carga_ativ_aprof = parse_int(td[7].text) if len(td) > 7 else 0
 
-            print("disciplina: ", codigo, nome, cr_aula, cr_trab, carga_total, carga_estagio, carga_pcc, carga_ativ_aprof)
-
             return cls(codigo, nome, cr_aula, cr_trab, carga_total,
                        carga_estagio, carga_pcc, carga_ativ_aprof)
         except Exception as e:
             print(f"⚠️ Erro ao criar disciplina: {e}")
             return None
+
+    def print(self):
+        print(f"Disciplina: {self.codigo} - {self.nome}: {self.creditos_aula}, {self.creditos_trabalho} créditos / Carga Total{self.carga_total}, {self.carga_estagio}, {self.carga_pcc}, {self.carga_ativ_aprof}")
 
     def __repr__(self):
         return f"<{self.codigo} - {self.nome}>"
