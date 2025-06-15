@@ -45,7 +45,7 @@ class Disciplina:
             return None
 
     def print(self):
-        print(f"Disciplina: {self.codigo} - {self.nome}: {self.creditos_aula}, {self.creditos_trabalho} créditos / Carga Total{self.carga_total}, {self.carga_estagio}, {self.carga_pcc}, {self.carga_ativ_aprof}")
+        print(f"Disciplina: {self.codigo} - {self.nome}: {self.creditos_aula}, {self.creditos_trabalho} créditos / Carga Total: {self.carga_total}, {self.carga_estagio}, {self.carga_pcc}, {self.carga_ativ_aprof}\n")
 
     def __repr__(self):
         return f"<{self.codigo} - {self.nome}>"

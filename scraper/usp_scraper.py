@@ -35,10 +35,9 @@ class USPScraper:
             if i >= self.limite_unidades:
                 break
 
-            codigo = opcao.get_attribute("value")
             nome = opcao.text.strip()
 
-            print(f"[{i+1}] Selecionando unidade: {nome} ({codigo})")
+            print(f"[{i+1}] Selecionando unidade: {nome}")
 
             # Seleciona a unidade no menu
             select.select_by_index(i + 1)
@@ -51,7 +50,7 @@ class USPScraper:
             select = Select(select_element)
 
             opcoes_cursos = select.options[1:]  # Ignora a primeira opção
-            print(f"Total de cursos encontrados para a unidade {unidade}: {len(opcoes_cursos)}")
+            print(f"Total de cursos encontrados para a unidade {unidade.nome}: {len(opcoes_cursos)}")
 
             for i, opcao in enumerate(opcoes_cursos):
                 codigo_curso = opcao.get_attribute("value")
