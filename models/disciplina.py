@@ -41,7 +41,7 @@ class Disciplina:
             return cls(codigo, nome, cr_aula, cr_trab, carga_total,
                        carga_estagio, carga_pcc, carga_ativ_aprof)
         except Exception as e:
-            print(f"⚠️ Erro ao criar disciplina: {e}")
+            print(f"Erro ao criar disciplina: {e}")
             return None
 
     def print(self):
