@@ -54,8 +54,8 @@ Siga os passos abaixo para configurar o ambiente e executar o projeto.
 ### Clone o repositório:
 
 ```bash
-git clone https://github.com/seu-usuario/seu-repositorio.git
-cd seu-repositorio
+git clone https://github.com/samuks123/Projeto-Final-Teste-e-Inspecao-de-Software
+cd Projeto-Final-Teste-e-Inspecao-de-Software
 ```
 
 ### Instale as dependências de sistema:
