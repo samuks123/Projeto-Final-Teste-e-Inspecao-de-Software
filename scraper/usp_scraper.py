@@ -1,83 +1,112 @@
+# scraper/usp_scraper.py
+
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.select import Select
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException, ElementClickInterceptedException
 from models.unidade import Unidade
 from models.curso import Curso
 import time
 
 class USPScraper:
+    
     def __init__(self, limite_unidades, tempo=0.1):
+        
         self.tempo = tempo
         self.limite_unidades = limite_unidades
         self.unidades = []
 
-        #options = Options()
-        #options.add_argument("--headless")  # ou remova para visualizar o navegador
-        self.driver = webdriver.Chrome()
+        options = Options()
+        
+        options.add_argument('--log-level=3') 
+        options.add_experimental_option('excludeSwitches', ['enable-logging'])
+
+        self.driver = webdriver.Chrome(options=options)
 
     def executar(self):
         url = "https://uspdigital.usp.br/jupiterweb/jupCarreira.jsp?codmnu=8275"
         self.driver.get(url)
+        
+        body = self.driver.find_element(By.TAG_NAME, 'body')
 
-        # Encontra o menu suspenso de unidades
-        select_element = self.driver.find_element(By.ID, "comboUnidade")
-        select = Select(select_element)
-
+        select_element_unidade = self.driver.find_element(By.ID, "comboUnidade")
+        select_unidade = Select(select_element_unidade)
         time.sleep(self.tempo)
-
-        # Coleta todas as opções (ignorando a primeira: "Selecione")
-        opcoes_unidades = select.options[1:]  # Ignora a primeira opção
+        opcoes_unidades = select_unidade.options[1:]
         print(f"Total de unidades encontradas: {len(opcoes_unidades)}")
 
-        for i, opcao in enumerate(opcoes_unidades):
+        for i, opcao_unidade in enumerate(opcoes_unidades):
+            
             if i >= self.limite_unidades:
                 break
 
-            nome = opcao.text.strip()
+            nome_unidade = opcao_unidade.text.strip()
+            print(f"[{i+1}] Selecionando unidade: {nome_unidade}")
+            select_unidade.select_by_index(i + 1)
+            time.sleep(self.tempo)
 
-            print(f"[{i+1}] Selecionando unidade: {nome}")
-
-            # Seleciona a unidade no menu
-            select.select_by_index(i + 1)
-            time.sleep(self.tempo)  # Tempo para o site carregar os cursos (ajuste conforme necessário)
-
-            unidade = Unidade(nome)
+            unidade = Unidade(nome_unidade)
             self.unidades.append(unidade)
-
-            select_element = self.driver.find_element(By.ID, "comboCurso")
-            select = Select(select_element)
-
-            opcoes_cursos = select.options[1:]  # Ignora a primeira opção
+            
+            opcoes_cursos = Select(self.driver.find_element(By.ID, "comboCurso")).options[1:]
             print(f"Total de cursos encontrados para a unidade {unidade.nome}: {len(opcoes_cursos)}")
 
-            for i, opcao in enumerate(opcoes_cursos):
-                codigo_curso = opcao.get_attribute("value")
-                nome_curso = opcao.text.strip()
-
-                print(f"  [{i+1}] Selecionando curso: {nome_curso} ({codigo_curso})")
-
-                # Seleciona o curso no menu
-                select.select_by_index(i + 1)
+            for j, opcao_curso in enumerate(opcoes_cursos):
+                Select(self.driver.find_element(By.ID, "comboUnidade")).select_by_index(i + 1)
+                time.sleep(self.tempo)
+                
+                select_curso_iter = Select(self.driver.find_element(By.ID, "comboCurso"))
+                codigo_curso = select_curso_iter.options[j + 1].get_attribute("value")
+                nome_curso = select_curso_iter.options[j + 1].text.strip()
+                print(f"  [{j+1}] Selecionando curso: {nome_curso} ({codigo_curso})")
+                select_curso_iter.select_by_index(j + 1)
 
                 check_input = self.driver.find_element(By.ID, "enviar")
                 check_input.click()
 
-                time.sleep(self.tempo * 2)
+                wait = WebDriverWait(self.driver, 3)
+                
+                try:
+                    overlay_locator = (By.CSS_SELECTOR, ".ui-widget-overlay, .blockOverlay")
+                    wait.until(EC.invisibility_of_element_located(overlay_locator))
 
-                tab_grade = self.driver.find_element(By.ID, "step4-tab")
-                tab_grade.click()
+                    tab_grade = wait.until(EC.element_to_be_clickable((By.ID, "step4-tab")))
+                    tab_grade.click()
+                    
+                    time.sleep(self.tempo * 3)
+                    
+                    curso = Curso.from_html(self.driver.page_source, unidade)
+                    unidade.adicionar_curso(curso)
 
-                time.sleep(self.tempo * 5)
+                except (TimeoutException, ElementClickInterceptedException):
+                    print(f"    --- Dados da grade não encontrados para o curso: {nome_curso}. Marcando como inválido.")
 
-                curso = Curso.from_html(self.driver.page_source, unidade)
-                unidade.adicionar_curso(curso)
+                    curso_invalido = Curso(nome_curso, unidade.nome)
+                    curso_invalido.dados_validos = False
+                    unidade.adicionar_curso(curso_invalido)
+                    
+                    body.send_keys(Keys.ESCAPE)
+                    time.sleep(0.5)
+                
+                except Exception as e:
+                    print(f"------ Ocorreu um erro desconhecido e não tratado ao processar o curso {nome_curso}: {e}")
 
-                tab_busca = self.driver.find_element(By.ID, "step1-tab")
-                tab_busca.click()
+                finally:
 
-                time.sleep(self.tempo * 2)
+                    try:
+                        overlay_locator = (By.CSS_SELECTOR, ".ui-widget-overlay, .blockOverlay")
+                        wait.until(EC.invisibility_of_element_located(overlay_locator))
+                    except TimeoutException:
+                        body.send_keys(Keys.ESCAPE)
+                        time.sleep(0.5)
+
+                    tab_busca = self.driver.find_element(By.ID, "step1-tab")
+                    tab_busca.click()
+                    time.sleep(self.tempo)
 
         print("\nFim da coleta de unidades.")
 

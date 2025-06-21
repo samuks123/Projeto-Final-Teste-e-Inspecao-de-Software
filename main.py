@@ -32,12 +32,15 @@ def main():
     char = ''
 
     while char != 'q':
+        
         char = input("\nInforma a ação desejada (q para sair): \n"
                     " 1. Lista de cursos por unidades\n"
                     " 2. Dados de um determinado curso\n"
                     " 3. Dados de todos os cursos\n"
                     " 4. Dados de uma disciplina, inclusive quais cursos ela faz parte\n"
-                    " 5. Disciplinas que são usadas em mais de um curso\n").strip().lower()
+                    " 5. Disciplinas que são usadas em mais de um curso\n"
+                    " 6. Top Cursos por Carga Horária\n"
+                    " 7. Análise de Cursos (Teórico vs. Prático)\n").strip().lower()
         match char:
             case '1':
                 print("=" * 50 + "\nLista de cursos por unidades:")
@@ -67,21 +70,28 @@ def main():
                 if disciplina_encontrada:
                     disciplina_encontrada.print()
                     disciplina_usada_em_mais_de_um_curso(cursos, 's', disciplina_encontrada.codigo)
-
                 else:
                     print(f"Disciplina com código {codigo_disciplina} não encontrada.")
 
             case '5':
                 print_curso = input("Deseja imprimir os cursos que usam disciplinas em mais de um curso? (s/n): ").strip().lower()
                 print("=" * 50 + "\nDisciplinas que são usadas em mais de um curso:")
-
                 disciplina_usada_em_mais_de_um_curso(cursos, print_curso)
 
+            case '6':
+                print("=" * 50 + "\nTop Cursos por Carga Horária:")
+                top_cursos_por_carga_horaria(cursos)
+
+            case '7':
+                print("=" * 50 + "\nAnálise de Cursos (Teórico vs. Prático):")
+                analise_cursos_teorico_pratico(cursos)
+            
             case 'q':
                 print("Saindo...")
 
             case _:
                 print("Opção inválida. Tente novamente.")
+
 
 def disciplina_usada_em_mais_de_um_curso(cursos, print_curso='s', codigo_alvo=None):
     disciplinas_usadas = {}
@@ -110,6 +120,72 @@ def disciplina_usada_em_mais_de_um_curso(cursos, print_curso='s', codigo_alvo=No
                     print(f"  - {curso.nome}")
             else:
                 print(f"Disciplina {codigo} usada em {len(cursos)} cursos.")
+
+# Top Cursos por Carga Horária
+def top_cursos_por_carga_horaria(cursos):
+    
+    try:
+        n = int(input("Deseja ver o ranking de quantos cursos? Digite um número: ").strip())
+    except ValueError:
+        print("Entrada inválida. Exibindo os 5 primeiros por padrão.")
+        n = 5
+
+    cargas_horarias = []
+    for curso in cursos:
+
+        if not curso.dados_validos:
+            continue
+        
+        carga_total_obrigatorias = sum(d.carga_total for d in curso.disciplinas_obrigatorias)
+        
+        if carga_total_obrigatorias > 0:
+            cargas_horarias.append((curso.nome, carga_total_obrigatorias))
+
+    # Ordena os cursos pela carga horária, do maior para o menor
+    cargas_horarias.sort(key=lambda x: x[1], reverse=True)
+
+    print(f"\n--- Top {n} Cursos por Carga Horária (Disciplinas Obrigatórias) ---")
+    for nome_curso, carga in cargas_horarias[:n]:
+        print(f"  - {nome_curso}: {carga} horas")
+
+# Análise de Cursos teorico vs. Prático
+def analise_cursos_teorico_pratico(cursos):
+
+    """Calcula a proporção de créditos práticos vs. teóricos e ranqueia os cursos."""
+
+    tipo_analise = input("Deseja ver os cursos mais 'teoricos' ou 'praticos'? ").strip().lower()
+
+    if tipo_analise not in ['teoricos', 'praticos']:
+        print("Opção inválida. Por favor, escolha 'teoricos' ou 'praticos'.")
+        return
+
+    try:
+        n = int(input(f"Deseja ver o ranking de quantos cursos mais {tipo_analise}? ").strip())
+
+    except ValueError:
+
+        print("Entrada inválida. Exibindo os 5 primeiros por padrão.")
+        n = 5
+
+    ratios = []
+    for curso in cursos:
+
+        if not curso.dados_validos or not curso.disciplinas_obrigatorias:
+            continue
+        
+        total_cr_aula = sum(d.creditos_aula for d in curso.disciplinas_obrigatorias)
+        total_cr_trab = sum(d.creditos_trabalho for d in curso.disciplinas_obrigatorias)
+
+        if total_cr_aula > 0:
+            ratio = total_cr_trab / total_cr_aula
+            ratios.append((curso.nome, ratio))
+
+    reverse_order = True if tipo_analise == 'praticos' else False
+    ratios.sort(key=lambda x: x[1], reverse=reverse_order)
+
+    print(f"\n--- Top {n} Cursos Mais {tipo_analise.capitalize()} (Proporção Créditos Trabalho/Aula) ---")
+    for nome_curso, ratio in ratios[:n]:
+        print(f"  - {nome_curso} (Ratio: {ratio:.2f})")
 
 
 if __name__ == "__main__":
