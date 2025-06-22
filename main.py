@@ -1,3 +1,12 @@
+"""
+
+Grupo:
+
+Samuel Victorio Bernacci - 12703455
+Vinicius Santos Monteiro - 11932463
+
+"""
+
 import sys
 from scraper.usp_scraper import USPScraper
 

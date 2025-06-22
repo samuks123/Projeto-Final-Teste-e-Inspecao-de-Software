@@ -1,3 +1,13 @@
+```
+
+Grupo:
+
+Samuel Victorio Bernacci - 12703455
+Vinicius Santos Monteiro - 11932463
+
+```
+
+
 # Coletor e Analisador de Dados de Cursos da USP
 
 ## 📖 Sobre o Projeto
